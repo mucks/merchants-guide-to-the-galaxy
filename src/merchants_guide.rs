@@ -1,4 +1,4 @@
-use crate::{error::Error, result::Result, roman::RomanCalc};
+use crate::{error::Error, result::Result, roman::VecRoman};
 use std::collections::HashMap;
 
 use crate::roman::Roman;

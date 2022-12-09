@@ -2,6 +2,7 @@
 pub enum Error {
     Custom(String),
     ParseIntError(std::num::ParseIntError),
+    InvalidRomanValues(String),
 }
 impl From<std::num::ParseIntError> for Error {
     fn from(parse_int_error: std::num::ParseIntError) -> Self {
