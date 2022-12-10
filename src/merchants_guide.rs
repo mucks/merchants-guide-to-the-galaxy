@@ -29,44 +29,49 @@ impl MerchantsGuide {
     }
 
     fn handle_statement(&mut self, input: &str) -> Result<()> {
-        if input.contains("is") {
-            let split: Vec<&str> = input.split(" is ").collect();
+        if !input.contains("is") {
+            return Err(Error::Custom(
+                "input does not contain is and therefore is not valid".into(),
+            ));
+        }
 
-            if split.len() != 2 {
-                return Err(Error::Custom(format!(
-                    "'{}': no value after the 'is' keyword, split: '{:?}'",
-                    input, split
+        let split: Vec<&str> = input.split(" is ").collect();
+
+        if split.len() != 2 {
+            return Err(Error::Custom(format!(
+                "'{}': no value after the 'is' keyword, split: '{:?}'",
+                input, split
+            )));
+        }
+        let key = split[0];
+        let value = split[1];
+
+        if value.contains("Credits") {
+            let credits_amount: i32 = value.replace("Credits", "").trim().parse()?;
+            self.sentence_credits.insert(key.into(), credits_amount);
+        } else {
+            let roman = Roman::try_from(value)?;
+            if key.split_whitespace().count() > 1 {
+                return Err(Error::InvalidInput(input.into()));
+            }
+            if self.word_values.contains_key(key) {
+                return Err(Error::InvalidInput(format!(
+                    "word '{}' has already been assigned!",
+                    key
                 )));
             }
-            let key = split[0];
-            let value = split[1];
-
-            if value.contains("Credits") {
-                let credits_amount: i32 = value.replace("Credits", "").trim().parse()?;
-                self.sentence_credits.insert(key.into(), credits_amount);
-            } else {
-                let roman = Roman::try_from(value)?;
-                if key.split_whitespace().count() > 1 {
-                    return Err(Error::InvalidInput(input.into()));
-                }
-                if self.word_values.contains_key(key) {
-                    return Err(Error::InvalidInput(format!(
-                        "word '{}' has already been assigned!",
-                        key
-                    )));
-                }
-                self.word_values.insert(key.into(), roman);
-            }
+            self.word_values.insert(key.into(), roman);
         }
         Ok(())
     }
+
     fn words_to_roman(&self, words: Vec<&str>) -> Result<Vec<Roman>> {
         let mut roman = vec![];
         for word in words {
             if let Some(r) = self.word_values.get(word) {
                 roman.push(r.to_owned());
             } else {
-                return Err(Error::Custom(format!("{} is not defined", word)));
+                return Err(Error::InvalidInput(format!("{} is not defined", word)));
             }
         }
         Ok(roman)
@@ -94,6 +99,10 @@ impl MerchantsGuide {
     }
 
     fn handle_how_many(&mut self, input: &str) -> Result<String> {
+        if !input.contains("how many Credits is ") {
+            return Err(Error::InvalidInput(input.into()));
+        }
+
         let text = input
             .replace("how many Credits is ", "")
             .replace('?', "")
@@ -128,21 +137,21 @@ impl MerchantsGuide {
                 Some(r) => roman_values.push(*r),
                 None => credit_values.push((
                     word,
-                    self.word_credits
-                        .get(word)
-                        .ok_or_else(|| Error::Custom(format!("unknown word {} not found", word)))?,
+                    self.word_credits.get(word).ok_or_else(|| {
+                        Error::InvalidInput(format!("unknown word {} not found", word))
+                    })?,
                 )),
             };
         }
 
         if credit_values.is_empty() {
-            return Err(Error::Custom(format!(
+            return Err(Error::InvalidInput(format!(
                 "no credit indicator word found in question:  {}",
                 input
             )));
         }
         if credit_values.len() > 1 {
-            return Err(Error::Custom(format!(
+            return Err(Error::InvalidInput(format!(
                 "too many credit indicator words found in question:\n'{}'\n these words are '{}'",
                 input,
                 credit_values

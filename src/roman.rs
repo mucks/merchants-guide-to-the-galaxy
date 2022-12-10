@@ -44,7 +44,12 @@ impl TryFrom<&str> for Roman {
             "C" => Self::C,
             "D" => Self::D,
             "M" => Self::M,
-            _ => return Err(Error::Custom(format!("invalid roman value: {}", value))),
+            _ => {
+                return Err(Error::InvalidRomanValues(format!(
+                    "invalid roman value: {}",
+                    value
+                )))
+            }
         };
         Ok(roman)
     }
