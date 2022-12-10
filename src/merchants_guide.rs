@@ -45,12 +45,17 @@ impl MerchantsGuide {
                 let credits_amount: i32 = value.replace("Credits", "").trim().parse()?;
                 self.sentence_credits.insert(key.into(), credits_amount);
             } else {
-                match Roman::try_from(value) {
-                    Ok(roman) => {
-                        self.word_values.insert(key.into(), roman);
-                    }
-                    Err(e) => println!("{:?}", e),
+                let roman = Roman::try_from(value)?;
+                if key.split_whitespace().count() > 1 {
+                    return Err(Error::InvalidInput(input.into()));
                 }
+                if self.word_values.contains_key(key) {
+                    return Err(Error::InvalidInput(format!(
+                        "word '{}' has already been assigned!",
+                        key
+                    )));
+                }
+                self.word_values.insert(key.into(), roman);
             }
         }
         Ok(())
@@ -61,14 +66,18 @@ impl MerchantsGuide {
             if let Some(r) = self.word_values.get(word) {
                 roman.push(r.to_owned());
             } else {
-                return Err(Error::Custom(format!("{} not found in word_values", word)));
+                return Err(Error::Custom(format!("{} is not defined", word)));
             }
         }
         Ok(roman)
     }
 
     fn handle_how_much(&mut self, input: &str) -> Result<String> {
-        let text = input.replace("how much is ", "").replace(" ?", "");
+        let text = input
+            .replace("how much is ", "")
+            .replace('?', "")
+            .trim_end()
+            .to_string();
         let words: Vec<&str> = text.split_whitespace().collect();
         //println!("words: {:?}", words);
         let roman_values = self.words_to_roman(words)?;
@@ -85,7 +94,12 @@ impl MerchantsGuide {
     }
 
     fn handle_how_many(&mut self, input: &str) -> Result<String> {
-        let text = input.replace("how many Credits is ", "").replace(" ?", "");
+        let text = input
+            .replace("how many Credits is ", "")
+            .replace('?', "")
+            .trim_end()
+            .to_string();
+
         let unknown_words = self.get_unknown_words(&text);
 
         // get the credit values for all unknown words
@@ -153,5 +167,72 @@ impl MerchantsGuide {
         } else {
             self.handle_how_many(input)
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::result::Result;
+
+    use super::MerchantsGuide;
+
+    #[test]
+    fn test_invalid_inputs() -> Result<()> {
+        let mut g = MerchantsGuide::new();
+
+        assert!(g.handle_input("glob is II").is_err());
+        assert!(g.handle_input("teesh is III").is_err());
+        g.handle_input("phisk is I")?;
+        assert!(g.handle_input("phisk is V").is_err());
+        assert!(g.handle_input("test test2 is V").is_err());
+        assert!(g.handle_input("how much is te ter tem ?").is_err());
+        assert!(g.handle_input("how many is phisk?").is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_input() -> Result<()> {
+        let mut g = MerchantsGuide::new();
+
+        g.handle_input("glob is I")?;
+        g.handle_input("prok is V")?;
+        g.handle_input("pish is X")?;
+        g.handle_input("tegj is L")?;
+        g.handle_input("glob glob Silver is 34 Credits")?;
+        g.handle_input("glob prok Gold is 57800 Credits")?;
+        g.handle_input("pish pish Iron is 3910 Credits")?;
+
+        assert_eq!(
+            g.handle_input("how much is pish tegj glob glob ?")?,
+            Some("pish tegj glob glob is 42".into())
+        );
+
+        assert_eq!(
+            g.handle_input("how many Credits is glob prok Silver ?")?,
+            Some("glob prok Silver is 68 Credits".into())
+        );
+
+        assert_eq!(
+            g.handle_input("how many Credits is glob prok Gold ?")?,
+            Some("glob prok Gold is 57800 Credits".into())
+        );
+
+        assert_eq!(
+            g.handle_input("how many Credits is glob prok Iron ?")?,
+            Some("glob prok Iron is 782 Credits".into())
+        );
+        if let Err(err) = g
+            .handle_input("how much wood could a woodchuck chuck if a woodchuck could chuck wood ?")
+        {
+            assert_eq!(
+                err.into_generic(),
+                "I have no idea what you are talking about".to_string()
+            );
+        } else {
+            panic!("how much wood could a woodchuck chuck if a woodchuck could chuck wood ? should fail");
+        }
+
+        Ok(())
     }
 }

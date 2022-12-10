@@ -175,7 +175,13 @@ mod test {
 
     #[test]
     fn test_roman_conversions() -> Result<()> {
-        for (s, v) in [("III", 3), ("II", 2), ("IV", 4), ("LIX", 59)] {
+        for (s, v) in [
+            ("III", 3),
+            ("II", 2),
+            ("IV", 4),
+            ("LIX", 59),
+            ("MMMDCCXXIV", 3724),
+        ] {
             test_roman_conversion(s, v)?;
         }
         Ok(())
