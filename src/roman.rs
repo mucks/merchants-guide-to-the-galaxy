@@ -4,6 +4,7 @@ use std::fmt::Display;
 use crate::error::Error;
 use crate::result::Result;
 
+// Roman Number Enum
 #[derive(Hash, Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum Roman {
     I = 1,
@@ -16,6 +17,7 @@ pub enum Roman {
 }
 
 impl Roman {
+    // checks if the roman value can be subtracted from the roman value b
     fn can_subtract(&self, b: &Roman) -> bool {
         use Roman::*;
         match self {
@@ -33,6 +35,7 @@ impl Display for Roman {
     }
 }
 
+// allows conversion from string to roman value
 impl TryFrom<&str> for Roman {
     type Error = Error;
     fn try_from(value: &str) -> Result<Self> {
@@ -54,6 +57,8 @@ impl TryFrom<&str> for Roman {
         Ok(roman)
     }
 }
+
+// allows subtraction between roman values (roman_value - roman_value)
 impl std::ops::Sub for Roman {
     type Output = Result<i32>;
 
@@ -69,13 +74,17 @@ impl std::ops::Sub for Roman {
     }
 }
 
+// VecRoman helper trait to put functions directly on an array of roman values
 pub trait VecRoman {
     fn sum(&self) -> Result<i32>;
     fn validate(&self) -> Result<()>;
     fn from_str(s: &str) -> Result<Vec<Roman>>;
 }
 
+// implementation of the trait above for roman values
+// examlpe of Vec<Roman> : XXIV
 impl VecRoman for Vec<Roman> {
+    // this validates the whole array of roman values
     fn validate(&self) -> Result<()> {
         use Roman::*;
         let mut map = HashMap::new();
@@ -111,6 +120,8 @@ impl VecRoman for Vec<Roman> {
 
         Ok(())
     }
+
+    // get the integer value of the whole roman value array
     fn sum(&self) -> Result<i32> {
         self.validate()?;
 
@@ -157,6 +168,7 @@ impl VecRoman for Vec<Roman> {
         Ok(total)
     }
 
+    // helper function to convert a string directly to an array of roman values
     fn from_str(s: &str) -> Result<Self> {
         let mut roman = Vec::new();
         for c in s.chars() {

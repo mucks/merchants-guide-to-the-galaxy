@@ -21,6 +21,7 @@ fn main() {
     }
 }
 
+// helper function for run_interactive
 fn print_instruction() {
     println!("Enter your statement or question below:");
     println!("---");
@@ -33,26 +34,35 @@ fn run_interactive() {
 
     print_instruction();
 
-    let mut g = merchants_guide::MerchantsGuide::new();
+    let mut guide = merchants_guide::MerchantsGuide::new();
 
     let stdin = io::stdin();
+
+    // waits for input line from stdin and runs the code inside the loop
     for line in stdin.lock().lines().flatten() {
+        // if the user inputs 'restart' the merchanst guide values will be reinitialized
         if line == "restart" {
-            g = merchants_guide::MerchantsGuide::new();
+            guide = merchants_guide::MerchantsGuide::new();
             println!("merchants guide restarted!");
             print_instruction();
             continue;
         }
+        // if the user inputs 'exit' the merchants program exits
         if line == "exit" {
             println!("merchants guide exited!");
             break;
         }
 
-        match g.handle_input(&line) {
+        // all other input gets fed into the merchants_guide
+        match guide.handle_input(&line) {
+            // if the input is successful print an answer
             Ok(out) => match out {
+                // if the input is a question print the answer
                 Some(s) => println!("{}", s),
+                // if the input is a statement print a confirmation message!
                 None => println!("input accepted!"),
             },
+            // if the input in't succesfull print the correct error message
             Err(err) => match err {
                 Error::InvalidInput(input) => {
                     println!("The input sentence is invalid: {}", input);
@@ -70,13 +80,23 @@ fn run_interactive() {
     }
 }
 
+// converts a file to roman value
 fn run_from_file(path: &str) -> Result<()> {
-    let f = fs::File::open(path).unwrap();
+    // open the file at the path that's specified in the path parameter
+    let f = match fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => {
+            println!("path: '{}' not found!", path);
+            return Ok(());
+        }
+    };
 
-    let mut g = merchants_guide::MerchantsGuide::new();
+    let mut guide = merchants_guide::MerchantsGuide::new();
 
+    // read the file line by line
     for line in BufReader::new(f).lines().flatten() {
-        match g.handle_input(&line) {
+        // feed the line into the merchants_guide
+        match guide.handle_input(&line) {
             Ok(os) => {
                 if let Some(s) = os {
                     println!("{}", s);

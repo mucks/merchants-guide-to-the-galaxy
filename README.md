@@ -26,3 +26,7 @@
 * to run the application in interactive mode use 'cargo run'
 * to run the application with input from a file 'cargo run file-path'
 * to test the application use 'cargo test'
+
+## Run With Docker
+* docker build -t merchant .
+* docker run -it merchant

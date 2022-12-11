@@ -1,3 +1,5 @@
+// Error Enum to handle different errors later in the appliaction that can occur
+
 #[derive(Debug)]
 pub enum Error {
     Custom(String),
